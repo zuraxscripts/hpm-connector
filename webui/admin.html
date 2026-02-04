@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    :root{
+      --bg:#0b0b0c;
+      --bg2:#111113;
+      --bg3:#151518;
+      --border:#1f1f23;
+      --text:#e9e9ee;
+      --muted:#a0a0aa;
+      --primary:#4f46e5;
+      --success:#22c55e;
+      --warning:#f59e0b;
+      --danger:#ef4444;
+      --info:#3b82f6;
+      --radius:18px;
+      --shadow: 0 12px 40px rgba(0,0,0,.45);
+    }
+
+    *{box-sizing:border-box; margin:0; padding:0;}
+    body{
+      background: transparent;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      overflow:hidden;
+      pointer-events:none;
+    }
+
+    .panel{
+      position:fixed;
+      left:20px; top:20px;
+      width:360px;
+      background: linear-gradient(180deg, rgba(20,20,22,.95), rgba(10,10,12,.96));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:20px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      pointer-events:auto;
+      transform: translateX(0);
+      opacity:1;
+      transition: transform .18s ease, opacity .18s ease;
+    }
+    .panel.hidden{
+      opacity:0;
+      transform: translateX(-16px);
+      pointer-events:none;
+    }
+
+    .panel-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 16px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .panel-title{
+      font-weight:800;
+      letter-spacing:.2px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:14px;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:999px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.5), rgba(79,70,229,.9));
+      box-shadow:0 0 12px rgba(79,70,229,.8);
+    }
+    .panel-sub{
+      font-size:11px;
+      color:var(--muted);
+      margin-top:2px;
+    }
+    .close-btn{
+      width:32px;height:32px;border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      color:var(--text);
+      cursor:pointer;
+      transition: transform .12s ease, border-color .12s ease;
+    }
+    .close-btn:hover{ border-color: rgba(255,255,255,.22); transform: translateY(-1px); }
+
+    .panel-body{ padding:14px 16px 16px; }
+
+    .section{ margin-bottom:14px; }
+    .section-title{
+      font-size:11px;
+      letter-spacing:.8px;
+      text-transform:uppercase;
+      color:var(--muted);
+      margin-bottom:8px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:8px;
+    }
+
+    .btnx{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color:var(--text);
+      padding:9px 10px;
+      border-radius:14px;
+      font-size:12px;
+      font-weight:650;
+      cursor:pointer;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+      display:flex; align-items:center; justify-content:center; gap:6px;
+      user-select:none;
+    }
+    .btnx:hover{ border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.08); transform: translateY(-1px); }
+    .btnx:active{ transform: translateY(0) scale(.99); }
+    .btnx.primary{ background: rgba(79,70,229,.22); border-color: rgba(79,70,229,.45); }
+    .btnx.success{ background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.40); }
+    .btnx.warning{ background: rgba(245,158,11,.18); border-color: rgba(245,158,11,.40); }
+    .btnx.danger{ background: rgba(239,68,68,.18); border-color: rgba(239,68,68,.40); }
+
+    .status{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:6px 10px;
+      font-size:12px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.25);
+    }
+    .status .k{ color:var(--muted); }
+    .status .v{ font-weight:700; }
+
+    .hint{
+      font-size:11px;
+      color:var(--muted);
+      margin-top:8px;
+    }
+
+    /* Modal */
+    .modal{
+      position:fixed; inset:0;
+      display:none; align-items:center; justify-content:center;
+      background: rgba(0,0,0,.55);
+      padding:18px;
+      pointer-events:auto;
+    }
+    .modal.active{ display:flex; }
+    .modal-card{
+      width:min(520px, 100%);
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,.10);
+      background: linear-gradient(180deg, rgba(20,20,22,.98), rgba(12,12,13,.98));
+      box-shadow: var(--shadow);
+    }
+    .modal-header, .modal-footer{
+      padding:14px 16px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+    }
+    .modal-footer{ border-top:1px solid rgba(255,255,255,.08); border-bottom:none; justify-content:flex-end; }
+    .modal-title{ font-weight:800; font-size:15px; }
+    .modal-body{ padding:16px; }
+
+    .form-group{ margin-bottom:12px; }
+    .form-label{ color:var(--muted); font-size:11px; font-weight:650; margin-bottom:6px; display:block; }
+    .inputx{
+      width:100%;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.25);
+      color:var(--text);
+      outline:none;
+      font-family:inherit;
+      font-size:13px;
+      transition: border-color .12s ease, background .12s ease;
+    }
+    .inputx:focus{
+      border-color: rgba(79,70,229,.6);
+      background: rgba(0,0,0,.30);
+    }
+    select.inputx{
+      appearance:none;-webkit-appearance:none;-moz-appearance:none;
+      background-image:
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0)),
+        radial-gradient(120px 40px at 18% -10%, rgba(79,70,229,.18), transparent 70%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23c2c6da' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat:no-repeat, no-repeat, no-repeat;
+      background-position:0 0, 0 0, right 12px center;
+      background-size:100% 100%, 100% 100%, 14px 14px;
+      padding-right:38px;
+      cursor:pointer;
+    }
+    textarea.inputx{ resize:vertical; min-height:90px; }
+
+    .row{
+      display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+    }
+    .error{
+      font-size:12px; color:#fca5a5;
+      background: rgba(239,68,68,.08);
+      border:1px solid rgba(239,68,68,.2);
+      padding:8px 10px;
+      border-radius:12px;
+      display:none;
+    }
+    .error.visible{ display:block; }
+  </style>
+</head>
+<body>
+  <div class="panel hidden" id="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title"><span class="dot"></span> Admin Panel</div>
+        <div class="panel-sub">/admin or /tx to toggle</div>
+      </div>
+      <button class="close-btn" id="btnClose">×</button>
+    </div>
+    <div class="panel-body">
+      <div class="section">
+        <div class="section-title">Quick Actions</div>
+        <div class="grid">
+          <button class="btnx success" data-act="heal">Heal</button>
+          <button class="btnx primary" data-act="armor">Armor</button>
+          <button class="btnx" data-act="session_public">Public Session</button>
+          <button class="btnx" data-act="session_private">Private Session</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Communication</div>
+        <div class="grid">
+          <button class="btnx warning" id="btnBroadcast">Broadcast</button>
+          <button class="btnx" id="btnMessage">Message Player</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Status</div>
+        <div class="status">
+          <div class="k">Server ID</div><div class="v" id="statSid">-</div>
+          <div class="k">Ping</div><div class="v" id="statPing">-</div>
+          <div class="k">Session</div><div class="v" id="statSession">-</div>
+        </div>
+      </div>
+      <div class="hint">Notifications appear as overlay cards on the right.</div>
+    </div>
+  </div>
+
+  <!-- Input Modal -->
+  <div class="modal" id="inputModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Broadcast</div>
+        <button class="close-btn" id="modalClose">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" id="targetWrap" style="display:none;">
+          <label class="form-label">Target Server ID</label>
+          <input class="inputx" id="targetId" placeholder="e.g. 12" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message</label>
+          <textarea class="inputx" id="modalMessage" placeholder="Type message..."></textarea>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label class="form-label">Duration (sec)</label>
+            <select class="inputx" id="durationSelect">
+              <option value="3">3s</option>
+              <option value="5" selected>5s</option>
+              <option value="8">8s</option>
+              <option value="12">12s</option>
+              <option value="16">16s</option>
+              <option value="20">20s</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <input class="inputx" id="modalType" readonly value="Broadcast" />
+          </div>
+        </div>
+        <div class="error" id="modalError">Please enter a message.</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btnx" id="modalCancel">Cancel</button>
+        <button class="btnx primary" id="modalSend">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const panel = document.getElementById('panel');
+    const inputModal = document.getElementById('inputModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalType = document.getElementById('modalType');
+    const modalMessage = document.getElementById('modalMessage');
+    const durationSelect = document.getElementById('durationSelect');
+    const targetWrap = document.getElementById('targetWrap');
+    const targetId = document.getElementById('targetId');
+    const modalError = document.getElementById('modalError');
+    let modalMode = 'broadcast';
+
+    function showPanel(show){
+      if(show) panel.classList.remove('hidden');
+      else panel.classList.add('hidden');
+    }
+
+    Events.Subscribe("setVisible", function(show){
+      showPanel(!!show);
+    });
+
+    Events.Subscribe("updateStatus", function(sid, ping, session){
+      document.getElementById('statSid').textContent = (sid != null ? sid : '-');
+      document.getElementById('statPing').textContent = (ping != null ? (ping + ' ms') : '-');
+      document.getElementById('statSession').textContent = (session != null ? session : '-');
+    });
+
+    document.getElementById('btnClose').addEventListener('click', () => {
+      Events.Call("panel:adminToggle", []);
+    });
+
+    document.querySelectorAll('[data-act]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const act = btn.getAttribute('data-act');
+        if (act === 'session_public') {
+          Events.Call("panel:adminAction", ["set_session", 0]);
+          return;
+        }
+        if (act === 'session_private') {
+          Events.Call("panel:adminAction", ["set_session", 999]);
+          return;
+        }
+        Events.Call("panel:adminAction", [act]);
+      });
+    });
+
+    function openModal(mode){
+      modalMode = mode;
+      modalMessage.value = '';
+      targetId.value = '';
+      modalError.classList.remove('visible');
+      durationSelect.value = '5';
+      if(mode === 'broadcast'){
+        modalTitle.textContent = 'Broadcast';
+        modalType.value = 'Broadcast';
+        targetWrap.style.display = 'none';
+      } else {
+        modalTitle.textContent = 'Message Player';
+        modalType.value = 'Direct Message';
+        targetWrap.style.display = '';
+      }
+      inputModal.classList.add('active');
+    }
+
+    function closeModal(){
+      inputModal.classList.remove('active');
+    }
+
+    document.getElementById('btnBroadcast').addEventListener('click', () => openModal('broadcast'));
+    document.getElementById('btnMessage').addEventListener('click', () => openModal('message'));
+
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.getElementById('modalCancel').addEventListener('click', closeModal);
+
+    document.getElementById('modalSend').addEventListener('click', () => {
+      const msg = (modalMessage.value || '').trim();
+      const duration = parseInt(durationSelect.value || '5', 10);
+      if (!msg) {
+        modalError.textContent = 'Please enter a message.';
+        modalError.classList.add('visible');
+        return;
+      }
+      if (modalMode === 'broadcast') {
+        Events.Call("panel:adminAction", ["broadcast", msg, duration]);
+      } else {
+        const sid = parseInt(targetId.value || '', 10);
+        if (!sid) {
+          modalError.textContent = 'Enter a valid server ID.';
+          modalError.classList.add('visible');
+          return;
+        }
+        Events.Call("panel:adminAction", ["message", msg, duration, sid]);
+      }
+      closeModal();
+    });
+
+    inputModal.addEventListener('click', (e) => {
+      if (e.target === inputModal) closeModal();
+    });
+  </script>
+</body>
+</html>

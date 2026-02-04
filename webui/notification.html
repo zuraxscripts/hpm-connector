@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        background: transparent;
+        overflow: hidden;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        pointer-events: none;
+    }
+
+    #notifications {
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        width: 380px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 10000;
+    }
+
+    .notif {
+        position: relative;
+        background: rgba(10, 10, 14, 0.88);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 14px;
+        padding: 16px 20px 16px 24px;
+        overflow: hidden;
+        transform: translateX(110%);
+        opacity: 0;
+        animation: notifIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);
+        pointer-events: auto;
+    }
+
+    .notif.removing {
+        animation: notifOut 0.35s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+    }
+
+    /* Accent bar on left side */
+    .notif::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+    }
+
+    .notif.message::before { background: linear-gradient(180deg, #60a5fa, #3b82f6); }
+    .notif.broadcast::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+    .notif.system::before { background: linear-gradient(180deg, #a78bfa, #8b5cf6); }
+    .notif.kick::before { background: linear-gradient(180deg, #f87171, #ef4444); }
+
+    /* Progress bar at bottom */
+    .notif::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.15);
+        animation: progress var(--dur, 5000ms) linear forwards;
+    }
+
+    .notif .notif-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .notif .notif-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        flex-shrink: 0;
+    }
+
+    .notif.message .notif-icon {
+        background: rgba(96, 165, 250, 0.15);
+        border: 1px solid rgba(96, 165, 250, 0.25);
+        color: #60a5fa;
+    }
+
+    .notif.broadcast .notif-icon {
+        background: rgba(251, 191, 36, 0.15);
+        border: 1px solid rgba(251, 191, 36, 0.25);
+        color: #fbbf24;
+    }
+
+    .notif.system .notif-icon {
+        background: rgba(167, 139, 250, 0.15);
+        border: 1px solid rgba(167, 139, 250, 0.25);
+        color: #a78bfa;
+    }
+
+    .notif.kick .notif-icon {
+        background: rgba(248, 113, 113, 0.15);
+        border: 1px solid rgba(248, 113, 113, 0.25);
+        color: #f87171;
+    }
+
+    .notif .notif-badge {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+    }
+
+    .notif.message .notif-badge { color: #60a5fa; }
+    .notif.broadcast .notif-badge { color: #fbbf24; }
+    .notif.system .notif-badge { color: #a78bfa; }
+    .notif.kick .notif-badge { color: #f87171; }
+
+    .notif .notif-text {
+        color: rgba(255, 255, 255, 0.88);
+        font-size: 13.5px;
+        line-height: 1.45;
+        word-wrap: break-word;
+    }
+
+    @keyframes notifIn {
+        0%   { transform: translateX(110%); opacity: 0; }
+        100% { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes notifOut {
+        0%   { transform: translateX(0); opacity: 1; }
+        100% { transform: translateX(110%); opacity: 0; }
+    }
+
+    @keyframes progress {
+        from { width: 100%; }
+        to   { width: 0%; }
+    }
+</style>
+</head>
+<body>
+<div id="notifications"></div>
+<script>
+    var icons = {
+        message:   '&#9993;',
+        broadcast: '&#128226;',
+        system:    '&#9881;',
+        kick:      '&#9888;'
+    };
+
+    var labels = {
+        message:   'Panel Message',
+        broadcast: 'Broadcast',
+        system:    'System',
+        kick:      'Kick Warning'
+    };
+
+    Events.Subscribe("showNotification", function(message, type, duration) {
+        type = type || 'message';
+        var dur = parseInt(duration || 5, 10);
+        if (isNaN(dur) || dur < 2) dur = 2;
+        if (dur > 20) dur = 20;
+        var durMs = dur * 1000;
+        var container = document.getElementById('notifications');
+        var div = document.createElement('div');
+        div.className = 'notif ' + type;
+        div.style.setProperty('--dur', durMs + 'ms');
+
+        div.innerHTML =
+            '<div class="notif-header">' +
+                '<div class="notif-icon">' + (icons[type] || icons.message) + '</div>' +
+                '<div class="notif-badge">' + (labels[type] || 'Notification') + '</div>' +
+            '</div>' +
+            '<div class="notif-text">' + escapeHtml(message) + '</div>';
+
+        container.appendChild(div);
+
+        setTimeout(function() {
+            div.classList.add('removing');
+            setTimeout(function() {
+                if (div.parentNode) div.parentNode.removeChild(div);
+            }, 350);
+        }, durMs);
+
+        while (container.children.length > 5) {
+            container.removeChild(container.firstChild);
+        }
+    });
+
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+</script>
+</body>
+</html>
