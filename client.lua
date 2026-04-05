@@ -18,6 +18,20 @@ local function getLocalServerId()
     return nil
 end
 
+local function sendClientIdentifiers()
+    local ids = {}
+    local ok, rid = pcall(function()
+        return Player.GetRockstarID(Game.GetPlayerId())
+    end)
+    if ok and rid then
+        ids.rockstarId = tostring(rid)
+    end
+
+    if next(ids) ~= nil then
+        pcall(Events.CallRemote, "panel:clientIdentifiers", ids)
+    end
+end
+
 local function sendAdminStatus()
     if not adminUI then return end
     local sid = getLocalServerId()
@@ -61,6 +75,11 @@ Events.Subscribe("resourceStart", function(resName)
         notifUI = WebUI.Create("file://hpm-connector/webui/notification.html", 1920, 1080, true)
         adminUI = WebUI.Create("file://hpm-connector/webui/admin.html", 1920, 1080, true)
         WebUI.CallEvent(adminUI, "setVisible", { false })
+
+        Thread.Create(function()
+            Thread.Pause(1500)
+            sendClientIdentifiers()
+        end)
     end
 end)
 

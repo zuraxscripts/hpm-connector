@@ -11,7 +11,7 @@ local PANEL_SECRET = "changeme"  -- Must match panel_config.json panel_secret
 local SEND_CHAT_MESSAGES = false -- Set true to also send panel messages to in-game chat
 
 -- ==================== State ====================
-local connectedPlayers = {}  -- serverID -> { name, ip, session, joinTime }
+local connectedPlayers = {}  -- serverID -> { name, ip, session, joinTime, identifiers }
 local actionQueue = {}       -- Actions queued from HTTP callbacks, processed in heartbeat thread
 
 -- ==================== JSON Helpers ====================
@@ -145,7 +145,8 @@ local function getPlayerData(serverID)
         ping = 0,
         ip = "",
         session = 0,
-        sessionActive = false
+        sessionActive = false,
+        identifiers = {}
     }
 
     local ok, val
@@ -162,9 +163,23 @@ local function getPlayerData(serverID)
     ok, val = pcall(Player.IsSessionActive, serverID)
     if ok then data.sessionActive = val or false end
 
+    ok, val = pcall(Player.GetRockstarID, serverID)
+    if ok and val then
+        data.identifiers.rockstarId = tostring(val)
+    end
+
     local tracked = connectedPlayers[serverID]
     if tracked then
         data.joinTime = tracked.joinTime or 0
+        if tracked.identifiers then
+            for k, v in pairs(tracked.identifiers) do
+                data.identifiers[k] = v
+            end
+        end
+    end
+
+    if next(data.identifiers) == nil then
+        data.identifiers = nil
     end
 
     return data
@@ -250,6 +265,19 @@ local function processActions()
             if sid and sessionId then
                 pcall(Player.SetSession, sid, sessionId)
             end
+
+        elseif action.type == "warn" then
+            local sid = tonumber(action.serverId)
+            local reason = action.reason or "Warning from admin"
+            local duration = tonumber(action.duration) or 8
+            if duration < 3 then duration = 3 end
+            if duration > 20 then duration = 20 end
+            if sid then
+                if SEND_CHAT_MESSAGES then
+                    pcall(Chat.SendMessage, sid, "{FFAE42}[Warning] {FFFFFF}" .. reason)
+                end
+                pcall(Events.CallRemote, "panel:notification", sid, { sid, reason, "warn", duration })
+            end
         end
     end
 end
@@ -302,6 +330,21 @@ Events.Subscribe("panel:adminAction", function(action, a, b, c)
     end
 end, true)
 
+Events.Subscribe("panel:clientIdentifiers", function(payload)
+    local source = Events.GetSource()
+    if not source then return end
+    if type(payload) ~= "table" then return end
+    if not connectedPlayers[source] then return end
+
+    local ids = connectedPlayers[source].identifiers or {}
+    for k, v in pairs(payload) do
+        if type(k) == "string" and v ~= nil then
+            ids[k] = tostring(v)
+        end
+    end
+    connectedPlayers[source].identifiers = ids
+end, true)
+
 -- ==================== Poll for Pending Actions ====================
 -- HTTP callback stores actions in queue instead of processing inline
 -- This avoids "CreateThread can not be used inside of a thread" error
@@ -328,7 +371,8 @@ Events.Subscribe("playerJoin", function()
     -- Track player
     connectedPlayers[source] = {
         name = name,
-        joinTime = os.time()
+        joinTime = os.time(),
+        identifiers = {}
     }
 
     -- Get full data and send to panel

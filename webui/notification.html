@@ -55,6 +55,7 @@
     .notif.message::before { background: linear-gradient(180deg, #60a5fa, #3b82f6); }
     .notif.broadcast::before { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
     .notif.system::before { background: linear-gradient(180deg, #a78bfa, #8b5cf6); }
+    .notif.warn::before { background: linear-gradient(180deg, #fbbf24, #f97316); }
     .notif.kick::before { background: linear-gradient(180deg, #f87171, #ef4444); }
 
     /* Progress bar at bottom */
@@ -103,6 +104,11 @@
         border: 1px solid rgba(167, 139, 250, 0.25);
         color: #a78bfa;
     }
+    .notif.warn .notif-icon {
+        background: rgba(251, 191, 36, 0.15);
+        border: 1px solid rgba(251, 191, 36, 0.25);
+        color: #fbbf24;
+    }
 
     .notif.kick .notif-icon {
         background: rgba(248, 113, 113, 0.15);
@@ -120,6 +126,7 @@
     .notif.message .notif-badge { color: #60a5fa; }
     .notif.broadcast .notif-badge { color: #fbbf24; }
     .notif.system .notif-badge { color: #a78bfa; }
+    .notif.warn .notif-badge { color: #fbbf24; }
     .notif.kick .notif-badge { color: #f87171; }
 
     .notif .notif-text {
@@ -152,6 +159,7 @@
         message:   '&#9993;',
         broadcast: '&#128226;',
         system:    '&#9881;',
+        warn:      '&#9888;',
         kick:      '&#9888;'
     };
 
@@ -159,6 +167,7 @@
         message:   'Panel Message',
         broadcast: 'Broadcast',
         system:    'System',
+        warn:      'Warning',
         kick:      'Kick Warning'
     };
 
